@@ -33,7 +33,10 @@ docker compose exec nestjs-api npm run start:dev
 
 Services:
 - `nestjs-api` — NestJS API, port `3000`
-- `db` — PostgreSQL 17, port `5432`, database `streamtube`, user/password `streamtube`
+- `db` — PostgreSQL 17, port `5432`, database `streamtube`, user/password `streamtube` — also backs the `pg-boss` job queue (no separate queue infra service)
+- `mailpit` — SMTP capture for local email testing, ports `1025` (SMTP), `8025` (web UI)
+- `minio` — S3-compatible object storage for video/thumbnail files, ports `9000` (API), `9001` (console); `minio-init` runs once to create the `streamtube-videos` bucket
+- `video-worker` — consumes the `video-processing` pg-boss queue (ffprobe duration + thumbnail capture via `fluent-ffmpeg`), runs `npm run start:worker` against the **compiled** `dist/worker.main.js` — it does **not** hot-reload. After changing worker code, run `docker compose exec nestjs-api npm run build` then `docker compose restart video-worker` to pick up changes.
 
 All verification and teardown commands run on the **host machine**:
 
