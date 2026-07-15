@@ -57,7 +57,11 @@ describe('Videos (e2e)', () => {
     const password = 'password123';
 
     const authService = app.get(AuthService);
-    const mailServiceInstance = (authService as any).mailService;
+    const mailServiceInstance = (
+      authService as unknown as {
+        mailService: { sendConfirmationEmail: (...args: string[]) => void };
+      }
+    ).mailService;
     let capturedToken = '';
     jest
       .spyOn(mailServiceInstance, 'sendConfirmationEmail')
@@ -73,7 +77,7 @@ describe('Videos (e2e)', () => {
     const res = await request(app.getHttpServer())
       .post('/auth/login')
       .send({ email, password });
-    return res.body.access_token;
+    return (res.body as { access_token: string }).access_token;
   }
 
   async function initiateUpload(
@@ -85,7 +89,12 @@ describe('Videos (e2e)', () => {
       .set('Authorization', `Bearer ${accessToken}`)
       .send({ filename: 'movie.mp4', mimeType: 'video/mp4', sizeBytes })
       .expect(201);
-    return res.body;
+    return res.body as {
+      id: string;
+      uploadId: string;
+      key: string;
+      status: string;
+    };
   }
 
   describe('POST /videos', () => {
@@ -102,16 +111,22 @@ describe('Videos (e2e)', () => {
         })
         .expect(201);
 
-      expect(res.body.id).toBeDefined();
-      expect(res.body.uploadId).toBeDefined();
-      expect(res.body.key).toMatch(/^videos\/.+\/.+\/original\.mp4$/);
-      expect(res.body.status).toBe('draft');
+      const body = res.body as {
+        id: string;
+        uploadId: string;
+        key: string;
+        status: string;
+      };
+      expect(body.id).toBeDefined();
+      expect(body.uploadId).toBeDefined();
+      expect(body.key).toMatch(/^videos\/.+\/.+\/original\.mp4$/);
+      expect(body.status).toBe('draft');
 
       const persisted = await videoRepository.findOneBy({
-        slug: res.body.id,
+        slug: body.id,
       });
       expect(persisted?.status).toBe('draft');
-      expect(persisted?.original_key).toBe(res.body.key);
+      expect(persisted?.original_key).toBe(body.key);
     });
 
     it('returns 400 with FILE_TOO_LARGE when sizeBytes exceeds 10GB', async () => {
@@ -127,7 +142,7 @@ describe('Videos (e2e)', () => {
         })
         .expect(400);
 
-      expect(res.body.error).toBe('FILE_TOO_LARGE');
+      expect((res.body as { error: string }).error).toBe('FILE_TOO_LARGE');
     });
 
     it('returns 401 without an Authorization header', async () => {
@@ -149,10 +164,13 @@ describe('Videos (e2e)', () => {
         .send({ partNumbers: [1, 2] })
         .expect(200);
 
-      expect(res.body.urls).toHaveLength(2);
-      expect(res.body.urls[0]).toEqual({
+      const urlsBody = res.body as {
+        urls: Array<{ partNumber: number; url: string }>;
+      };
+      expect(urlsBody.urls).toHaveLength(2);
+      expect(urlsBody.urls[0]).toEqual({
         partNumber: 1,
-        url: expect.any(String),
+        url: expect.any(String) as unknown as string,
       });
     });
 
@@ -167,7 +185,7 @@ describe('Videos (e2e)', () => {
         .send({ partNumbers: [1] })
         .expect(403);
 
-      expect(res.body.error).toBe('VIDEO_NOT_OWNED');
+      expect((res.body as { error: string }).error).toBe('VIDEO_NOT_OWNED');
     });
 
     it("returns 409 with INVALID_VIDEO_STATUS when the video is not 'draft'", async () => {
@@ -184,7 +202,9 @@ describe('Videos (e2e)', () => {
         .send({ partNumbers: [1] })
         .expect(409);
 
-      expect(res.body.error).toBe('INVALID_VIDEO_STATUS');
+      expect((res.body as { error: string }).error).toBe(
+        'INVALID_VIDEO_STATUS',
+      );
     });
   });
 
@@ -197,7 +217,10 @@ describe('Videos (e2e)', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .send({ partNumbers: [1] })
         .expect(200);
-      const uploadResponse = await fetch(partUrlsRes.body.urls[0].url, {
+      const partUrlsBody = partUrlsRes.body as {
+        urls: Array<{ partNumber: number; url: string }>;
+      };
+      const uploadResponse = await fetch(partUrlsBody.urls[0].url, {
         method: 'PUT',
         body: new Uint8Array(Buffer.from('hello from the e2e test')),
       });
@@ -228,7 +251,9 @@ describe('Videos (e2e)', () => {
         .send({ parts: [{ partNumber: 1, eTag: 'bogus' }] })
         .expect(409);
 
-      expect(res.body.error).toBe('INVALID_VIDEO_STATUS');
+      expect((res.body as { error: string }).error).toBe(
+        'INVALID_VIDEO_STATUS',
+      );
     });
   });
 
@@ -251,8 +276,8 @@ describe('Videos (e2e)', () => {
         sizeBytes: '1000',
         durationSeconds: null,
         metadata: null,
-        createdAt: expect.any(String),
-        updatedAt: expect.any(String),
+        createdAt: expect.any(String) as unknown as string,
+        updatedAt: expect.any(String) as unknown as string,
       });
     });
 
@@ -266,7 +291,7 @@ describe('Videos (e2e)', () => {
         .set('Authorization', `Bearer ${otherToken}`)
         .expect(403);
 
-      expect(res.body.error).toBe('VIDEO_NOT_OWNED');
+      expect((res.body as { error: string }).error).toBe('VIDEO_NOT_OWNED');
     });
 
     it('returns 404 with VIDEO_NOT_FOUND for a non-existent id', async () => {
@@ -277,7 +302,7 @@ describe('Videos (e2e)', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(404);
 
-      expect(res.body.error).toBe('VIDEO_NOT_FOUND');
+      expect((res.body as { error: string }).error).toBe('VIDEO_NOT_FOUND');
     });
   });
 
@@ -305,7 +330,9 @@ describe('Videos (e2e)', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(409);
 
-      expect(res.body.error).toBe('INVALID_VIDEO_STATUS');
+      expect((res.body as { error: string }).error).toBe(
+        'INVALID_VIDEO_STATUS',
+      );
     });
   });
 
@@ -333,7 +360,9 @@ describe('Videos (e2e)', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(409);
 
-      expect(res.body.error).toBe('INVALID_VIDEO_STATUS');
+      expect((res.body as { error: string }).error).toBe(
+        'INVALID_VIDEO_STATUS',
+      );
     });
   });
 
@@ -368,7 +397,7 @@ describe('Videos (e2e)', () => {
         .set('Authorization', `Bearer ${otherToken}`)
         .expect(403);
 
-      expect(res.body.error).toBe('VIDEO_NOT_OWNED');
+      expect((res.body as { error: string }).error).toBe('VIDEO_NOT_OWNED');
     });
 
     it('returns 409 with INVALID_VIDEO_STATUS when the video is not failed', async () => {
@@ -380,7 +409,9 @@ describe('Videos (e2e)', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(409);
 
-      expect(res.body.error).toBe('INVALID_VIDEO_STATUS');
+      expect((res.body as { error: string }).error).toBe(
+        'INVALID_VIDEO_STATUS',
+      );
     });
   });
 });

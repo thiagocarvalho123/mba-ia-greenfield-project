@@ -124,13 +124,13 @@ describe('VideosService', () => {
           title: 'movie',
           original_filename: 'movie.mp4',
           upload_id: 'upload-1',
-          slug: expect.any(String),
+          slug: expect.any(String) as unknown as string,
         }),
       );
       expect(result).toEqual({
-        id: expect.any(String),
+        id: expect.any(String) as unknown as string,
         uploadId: 'upload-1',
-        key: expect.stringContaining('videos/channel-1/'),
+        key: expect.stringContaining('videos/channel-1/') as unknown as string,
         status: 'draft',
       });
     });
