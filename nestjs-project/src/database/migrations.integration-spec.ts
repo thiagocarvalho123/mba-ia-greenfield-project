@@ -8,8 +8,9 @@ import { CreateAuthTokens1777579850478 } from './migrations/1777579850478-Create
 import { createTestDataSource } from '../test/create-test-data-source';
 
 const MANAGED_TABLES = [
-  'users',
+  'videos',
   'channels',
+  'users',
   'refresh_tokens',
   'verification_tokens',
 ];
@@ -31,12 +32,10 @@ describe('Database migrations (integration)', () => {
 
     await dataSource.initialize();
 
-    await Promise.all([
-      ...MANAGED_TABLES.map((table) =>
-        dataSource.query(`DROP TABLE IF EXISTS "${table}" CASCADE`),
-      ),
-      dataSource.query(`DROP TABLE IF EXISTS "migrations" CASCADE`),
-    ]);
+    for (const table of MANAGED_TABLES) {
+      await dataSource.query(`DROP TABLE IF EXISTS "${table}" CASCADE`);
+    }
+    await dataSource.query(`DROP TABLE IF EXISTS "migrations" CASCADE`);
     await dataSource.query(
       `DROP TYPE IF EXISTS "public"."verification_tokens_type_enum"`,
     );
