@@ -48,7 +48,7 @@ sources_mtime:
 | phase-03-videos/TD-02 | technical-decisions-phase-03-videos.md | Backend | Large File Upload Strategy (up to 10GB) | decided | A (Presigned multipart direct-to-storage) | — |
 | phase-03-videos/TD-03 | technical-decisions-phase-03-videos.md | Backend | Object Storage Client & Bucket/Key Strategy | decided | A (AWS SDK v3) | @aws-sdk/client-s3@^3.x, @aws-sdk/s3-request-presigner@^3.x |
 | phase-03-videos/TD-04 | technical-decisions-phase-03-videos.md | Backend | Video Worker Runtime & Metadata/Thumbnail Extraction | decided | A (fluent-ffmpeg) | fluent-ffmpeg@^2.1.x |
-| phase-03-videos/TD-05 | technical-decisions-phase-03-videos.md | Backend | Unique Video URL Strategy | decided | A (UUID PK as URL id) | — |
+| phase-03-videos/TD-05 | technical-decisions-phase-03-videos.md | Backend | Unique Video URL Strategy | decided | B (slug nanoid, 11 chars, unique-indexed) | nanoid@^3.3.x |
 | phase-03-videos/TD-06 | technical-decisions-phase-03-videos.md | Backend | Video Delivery Strategy (Streaming & Download) | decided | A (Presigned GET redirect) | — |
 | phase-03-videos/TD-07 | technical-decisions-phase-03-videos.md | Backend | Processing Failure & Retry Policy | decided | B (Queue-native retry + manual reprocess) | — |
 
@@ -100,9 +100,9 @@ _Source files:_
 
 ### phase-03-videos/TD-05
 
-**Recommendation:** UUID primary key used directly as the public URL id — the brief's requirement is strictly "unique, no conflict," which the already-mandated UUID PK (`.claude/rules/nestjs-entities.md`) satisfies with zero additional mechanism, consistent with how `channels`/`users` already expose their UUID `id`.
+**Recommendation:** Dedicated `slug` column (11-char `nanoid`, unique-indexed, 5-attempt collision retry) as the public video id — `plan.txt` line 86 and `project-plan.md` §4 explicitly require a "URL curta e única"; the UUID PK does not satisfy the "curta" requirement. The UUID PK is internal-only (storage keys, FK relations, queue payloads); every API response's `id` field exposes the slug. Nanoid v3.3.x (CommonJS-compatible) chosen over v4+ (ESM-only) to avoid the Jest `transformIgnorePatterns` overhead already incurred by pg-boss. Field `title` (auto-derived from the filename at initiation, without extension) also included as a minimum Video field per `plan.txt` line 90, with editing deferred to Fase 04.
 
-**Libraries:** —
+**Libraries:** `nanoid@^3.3.x`
 
 ### phase-03-videos/TD-06
 
