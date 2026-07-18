@@ -61,3 +61,9 @@ All 8 SIs above were marked "done" before a literal-compliance audit against `pl
 **Files touched by this addendum:** `video.entity.ts`, `videos.service.ts`, `videos.controller.ts`, `video-processing.consumer.ts`, the `CreateVideos` migration (edited in place, still uncommitted), `nanoid` added to `package.json`, and all 5 affected test files (`video.entity.integration-spec.ts`, `videos.service.spec.ts`, `videos.service.integration-spec.ts`, `test/videos.e2e-spec.ts`, `video-processing.consumer.spec.ts`) updated to match. `phase-03-videos.md`, `technical-decisions-phase-03-videos.md`, and `library-refs.md` updated to reflect all of the above.
 
 **Docker-based verification (2026-07-18):** `tsc --noEmit` exit 0, `npm run lint` exit 0 (0 errors, 176 warnings — all warnings are `no-unsafe-*` in test files, downgraded to warn via ESLint test-file override), `npm test -- --runInBand` 201/201 tests passing (33 suites), `npm run test:e2e` 70/70 passing (4 suites). Definition of Done fully satisfied.
+
+## Post-addendum bugfix (2026-07-18)
+
+**Finding (identified via Fable 5 functional test):** `GET /videos/:id` did not expose `thumbnail_key` and `failure_reason` in the response, despite both columns being populated by the worker (`thumbnail_key` on `ready`, `failure_reason` on `failed`). Clients had no way to surface the thumbnail or diagnose processing failures through the API.
+
+**Fix:** Added `thumbnailKey: string | null` and `failureReason: string | null` to the `VideoMetadata` interface in `videos.service.ts`, mapped them in `findById`, updated the OpenAPI schema in `videos.controller.ts`, and updated both the unit test assertion in `videos.service.spec.ts` and the E2E assertion in `test/videos.e2e-spec.ts`. Definition of Done re-confirmed: 201/201 unit+integration, 70/70 e2e, `tsc --noEmit` exit 0, lint 0 errors.
