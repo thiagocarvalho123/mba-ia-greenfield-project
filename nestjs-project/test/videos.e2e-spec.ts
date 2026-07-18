@@ -276,6 +276,8 @@ describe('Videos (e2e)', () => {
         sizeBytes: '1000',
         durationSeconds: null,
         metadata: null,
+        thumbnailKey: null,
+        failureReason: null,
         createdAt: expect.any(String) as unknown as string,
         updatedAt: expect.any(String) as unknown as string,
       });
