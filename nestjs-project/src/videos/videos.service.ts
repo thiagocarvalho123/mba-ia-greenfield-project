@@ -41,6 +41,8 @@ export interface VideoMetadata {
   sizeBytes: string;
   durationSeconds: number | null;
   metadata: Record<string, unknown> | null;
+  thumbnailKey: string | null;
+  failureReason: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -220,6 +222,8 @@ export class VideosService {
       sizeBytes: video.size_bytes,
       durationSeconds: video.duration_seconds,
       metadata: video.metadata,
+      thumbnailKey: video.thumbnail_key,
+      failureReason: video.failure_reason,
       createdAt: video.created_at,
       updatedAt: video.updated_at,
     };

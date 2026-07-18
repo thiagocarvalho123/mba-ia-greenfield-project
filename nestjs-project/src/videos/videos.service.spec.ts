@@ -335,6 +335,8 @@ describe('VideosService', () => {
         sizeBytes: video.size_bytes,
         durationSeconds: 42,
         metadata: null,
+        thumbnailKey: null,
+        failureReason: null,
         createdAt: video.created_at,
         updatedAt: video.updated_at,
       });

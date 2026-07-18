@@ -198,6 +198,8 @@ export class VideosController {
         sizeBytes: { type: 'string' },
         durationSeconds: { type: 'number', nullable: true },
         metadata: { type: 'object', nullable: true },
+        thumbnailKey: { type: 'string', nullable: true },
+        failureReason: { type: 'string', nullable: true },
         createdAt: { type: 'string', format: 'date-time' },
         updatedAt: { type: 'string', format: 'date-time' },
       },
